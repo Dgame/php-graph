@@ -50,7 +50,7 @@ final class GraphTest extends TestCase
         $graph->setForwardCycleTransition();
 
         $visualizer = new MermaidVisualizer($graph);
-        $exptected = [
+        $exptected  = [
             'A1[x]-->B1[y]',
             'B1-->C1[z]',
             'C1-->A1'
@@ -68,7 +68,7 @@ final class GraphTest extends TestCase
         $graph->setBackwardCycleTransition();
 
         $visualizer = new MermaidVisualizer($graph);
-        $exptected = [
+        $exptected  = [
             'A1[x]-->B1[z]',
             'C1[y]-->A1',
             'B1-->C1'
