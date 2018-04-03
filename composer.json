@@ -24,7 +24,8 @@
             "src/"
         ],
         "psr-4": {
-            "Dgame\\Graph\\": "src/"
+            "Dgame\\Graph\\": "src/",
+            "Dgame\\Graph\\Test\\": "tests/"
         }
     },
     "scripts": {

@@ -9,10 +9,10 @@ use Dgame\Graph\Node\ProcessNodeInterface;
 use Dgame\Graph\Node\TransitionNodeInterface;
 
 /**
- * Class MermaidGraphVisualizer
+ * Class MermaidVisualizer
  * @package Dgame\Graph\Visualizer
  */
-final class MermaidGraphVisualizer implements VisualizerInterface, NodeVisitorInterface
+final class MermaidVisualizer implements VisualizerInterface, NodeVisitorInterface
 {
     /**
      * @var int

@@ -73,16 +73,25 @@ final class Graph
         return $this->nodes;
     }
 
+    /**
+     * @return TransitionNodeInterface
+     */
     public function getFirstNode(): TransitionNodeInterface
     {
         return reset($this->nodes);
     }
 
+    /**
+     * @return TransitionNodeInterface
+     */
     public function getLastNode(): TransitionNodeInterface
     {
         return end($this->nodes);
     }
 
+    /**
+     *
+     */
     public function setForwardTransition(): void
     {
         for ($i = 0, $c = count($this->nodes) - 1; $i < $c; $i++) {
@@ -90,6 +99,9 @@ final class Graph
         }
     }
 
+    /**
+     *
+     */
     public function setBackwardTransition(): void
     {
         for ($i = count($this->nodes) - 1; $i > 0; $i--) {
@@ -97,12 +109,18 @@ final class Graph
         }
     }
 
+    /**
+     *
+     */
     public function setForwardCycleTransition(): void
     {
         $this->setForwardTransition();
         $this->getLastNode()->setTransitionTo($this->getFirstNode());
     }
 
+    /**
+     *
+     */
     public function setBackwardCycleTransition(): void
     {
         $this->setBackwardTransition();
