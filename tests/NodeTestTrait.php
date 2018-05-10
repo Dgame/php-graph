@@ -24,8 +24,7 @@ trait NodeTestTrait
      */
     private function createNode(string $name): ProcessNodeInterface
     {
-        return new class($name) extends AbstractProcessNode
-        {
+        return new class($name) extends AbstractProcessNode {
             public function isFulfilledBy(Context $context): bool
             {
                 return $context->getAsBool($this->getName());

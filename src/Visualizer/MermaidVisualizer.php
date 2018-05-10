@@ -70,7 +70,7 @@ final class MermaidVisualizer implements VisualizerInterface, NodeVisitorInterfa
         $alias    = $this->getAliasOf($node);
         $template = new MermaidTemplate($node);
 
-        $mermaidNode = sprintf($template->getTemplate(), $alias, $this->getMermaidNodeContentOf($node));
+        $mermaidNode        = sprintf($template->getTemplate(), $alias, $this->getMermaidNodeContentOf($node));
         $this->nodes[$name] = $mermaidNode;
 
         return $mermaidNode;
