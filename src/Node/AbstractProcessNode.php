@@ -48,12 +48,9 @@ abstract class AbstractProcessNode extends TransitionNode implements ProcessNode
         foreach ($this->getTransitions() as $transition) {
             $node = $transition->getNode();
             $node->accept($visitor);
-            if ($visitor->isMatched()) {
-                return true;
-            }
         }
 
-        return false;
+        return $visitor->isMatched();
     }
 
     /**

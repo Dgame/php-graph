@@ -57,7 +57,7 @@ final class ProcessNodeVisitor implements NodeVisitorInterface
     public function visitProcessNode(ProcessNodeInterface $node): void
     {
         if ($node->isFulfilledBy($this->context)) {
-            $this->matched = $node->process($this->context);
+            $this->matched ^= $node->process($this->context);
         }
     }
 }

@@ -19,13 +19,9 @@ final class Context implements ContainerInterface, AbortableInterface
      */
     private $context = [];
     /**
-     * @var bool
+     * @var \SplStack
      */
-    private $aborted = false;
-    /**
-     * @var string|null
-     */
-    private $message;
+    private $aborts;
     /**
      * @var LoggerInterface
      */
@@ -34,6 +30,14 @@ final class Context implements ContainerInterface, AbortableInterface
      * @var NodeStateTracerInterface
      */
     private $tracer;
+
+    /**
+     * Context constructor.
+     */
+    public function __construct()
+    {
+        $this->aborts = new \SplStack();
+    }
 
     /**
      * @param string $name
@@ -82,8 +86,7 @@ final class Context implements ContainerInterface, AbortableInterface
      */
     public function abort(string $message = null): void
     {
-        $this->aborted = true;
-        $this->message = $message;
+        $this->aborts->push($message);
     }
 
     /**
@@ -91,7 +94,7 @@ final class Context implements ContainerInterface, AbortableInterface
      */
     public function isAborted(): bool
     {
-        return $this->aborted;
+        return $this->aborts->isEmpty();
     }
 
     /**
@@ -99,7 +102,12 @@ final class Context implements ContainerInterface, AbortableInterface
      */
     public function getAbortMessage(): string
     {
-        return $this->message ?? '';
+        $messages = [];
+        while (!$this->aborts->isEmpty()) {
+            $messages[] = $this->aborts->pop();
+        }
+
+        return implode(PHP_EOL, $messages);
     }
 
     /**
