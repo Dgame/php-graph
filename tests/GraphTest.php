@@ -2,8 +2,8 @@
 
 namespace Dgame\Graph\Test;
 
+use Dgame\Graph\Context;
 use Dgame\Graph\Graph;
-use Dgame\Graph\Visualizer\MermaidVisualizer;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -11,69 +11,95 @@ use PHPUnit\Framework\TestCase;
  */
 final class GraphTest extends TestCase
 {
-    use NodeTestTrait;
-
-    public function testMermaidVisualizing()
+    public function testTraverse()
     {
         $graph = new Graph();
-        $graph->setNode($this->createNode('a'));
-        $graph->setNode($this->createNode('b'));
-        $graph->setNode($this->createNode('c1'));
-        $graph->setNode($this->createNode('c2'));
-        $graph->setNode($this->createNode('d'));
+        $graph->insert(function () {
+            print $this->getName() . PHP_EOL;
+        }, 'A');
+        $graph->insert(function () {
+            print $this->getName() . PHP_EOL;
+        }, 'B');
+        $graph->insert(function () {
+            print $this->getName() . PHP_EOL;
+        }, 'C');
 
-        $graph->getNode('a')->setTransitionTo($graph->getNode('b'));
-        $graph->getNode('b')->setTransitionTo($graph->getNode('c1'));
-        $graph->getNode('b')->setTransitionTo($graph->getNode('c2'));
-        $graph->getNode('c1')->setTransitionTo($graph->getNode('d'));
-        $graph->getNode('c2')->setTransitionTo($graph->getNode('d'));
+        $graph->setTransition('A', 'C');
+        $graph->setTransition('C', 'B');
 
-        $visualizer = new MermaidVisualizer($graph);
+        $context = new Context();
+        ob_start();
+        $graph->traverse('A', $context);
+        $content = ob_get_clean();
 
-        $exptected = [
-            'A1[a]-->B1{b}',
-            'B1-->C1[c1]',
-            'B1-->D1[c2]',
-            'C1-->E1(d)',
-            'D1-->E1',
-        ];
-
-        $this->assertEquals($exptected, $visualizer->getVisualized());
+        $this->assertEquals(['A', 'C', 'B'], explode(PHP_EOL, trim($content)));
     }
 
-    public function testForwardTransition()
+    public function testIsCyclic()
     {
-        $graph      = new Graph();
-        $graph->setNode($this->createNode('x'));
-        $graph->setNode($this->createNode('y'));
-        $graph->setNode($this->createNode('z'));
-        $graph->setForwardCycleTransition();
+        $graph = new Graph();
+        $graph->insert(function () {
+        }, 'A');
+        $graph->insert(function () {
+        }, 'B');
+        $graph->insert(function () {
+        }, 'C');
 
-        $visualizer = new MermaidVisualizer($graph);
-        $exptected  = [
-            'A1[x]-->B1[y]',
-            'B1-->C1[z]',
-            'C1-->A1'
-        ];
+        $graph->setTransition('A', 'C');
+        $graph->setTransition('C', 'B');
 
-        $this->assertEquals($exptected, $visualizer->getVisualized());
+        $this->assertFalse($graph->isCyclic('A'));
+        $this->assertFalse($graph->isCyclic('B'));
+        $this->assertFalse($graph->isCyclic('C'));
+
+        $graph->setTransition('B', 'A');
+
+        $this->assertTrue($graph->isCyclic('A'));
+        $this->assertTrue($graph->isCyclic('B'));
+        $this->assertTrue($graph->isCyclic('C'));
     }
 
-    public function testBAckwardTransition()
+    public function testCanReach()
     {
-        $graph      = new Graph();
-        $graph->setNode($this->createNode('x'));
-        $graph->setNode($this->createNode('y'));
-        $graph->setNode($this->createNode('z'));
-        $graph->setBackwardCycleTransition();
+        $graph = new Graph();
+        $graph->insert(function () {
+        }, 'A');
+        $graph->insert(function () {
+        }, 'B');
+        $graph->insert(function () {
+        }, 'C');
 
-        $visualizer = new MermaidVisualizer($graph);
-        $exptected  = [
-            'A1[x]-->B1[z]',
-            'C1[y]-->A1',
-            'B1-->C1'
-        ];
+        $graph->setTransition('A', 'C');
 
-        $this->assertEquals($exptected, $visualizer->getVisualized());
+        $this->assertFalse($graph->canReach('A', 'B'));
+        $this->assertTrue($graph->canReach('A', 'C'));
+
+        $graph->setTransition('C', 'B');
+
+        $this->assertTrue($graph->canReach('A', 'B'));
+    }
+
+    public function testGetTargets()
+    {
+        $graph = new Graph();
+        $graph->insert(function () {
+        }, 'A');
+        $graph->insert(function () {
+        }, 'B');
+        $graph->insert(function () {
+        }, 'C');
+
+        $graph->setTransition('A', 'C');
+        $graph->setTransition('C', 'B');
+
+        $this->assertEquals(['B'], $graph->getTargets('A'));
+        $this->assertEmpty($graph->getTargets('B'));
+        $this->assertEquals(['B'], $graph->getTargets('C'));
+
+        $graph->setTransition('B', 'A');
+
+        $this->assertEmpty($graph->getTargets('A'));
+        $this->assertEmpty($graph->getTargets('B'));
+        $this->assertEmpty($graph->getTargets('C'));
     }
 }

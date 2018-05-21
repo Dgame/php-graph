@@ -8,20 +8,21 @@
     "packages": [
         {
             "name": "dgame/php-ensurance",
-            "version": "v2.0.0",
+            "version": "v2.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Dgame/php-ensurance.git",
-                "reference": "93e29b57075611f39921d31de240f99106b99a9f"
+                "reference": "7ccc1ceb50f3278801d03df3337883158814bf5d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Dgame/php-ensurance/zipball/93e29b57075611f39921d31de240f99106b99a9f",
-                "reference": "93e29b57075611f39921d31de240f99106b99a9f",
+                "url": "https://api.github.com/repos/Dgame/php-ensurance/zipball/7ccc1ceb50f3278801d03df3337883158814bf5d",
+                "reference": "7ccc1ceb50f3278801d03df3337883158814bf5d",
                 "shasum": ""
             },
             "require": {
-                "php": "^7"
+                "dgame/php-type": "^0.9",
+                "php": "^7.1"
             },
             "require-dev": {
                 "phpunit/phpunit": "^6.4"
@@ -57,7 +58,54 @@
                 "Ensurance",
                 "assertion"
             ],
-            "time": "2018-04-04T19:47:35+00:00"
+            "time": "2018-05-15T13:13:05+00:00"
+        },
+        {
+            "name": "dgame/php-type",
+            "version": "v0.9.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Dgame/php-type.git",
+                "reference": "e4e6737da6e239f73a3fcb8d5e223ffa3b3dcd91"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Dgame/php-type/zipball/e4e6737da6e239f73a3fcb8d5e223ffa3b3dcd91",
+                "reference": "e4e6737da6e239f73a3fcb8d5e223ffa3b3dcd91",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^6.3"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "src/"
+                ],
+                "files": [
+                    "src/functions.php"
+                ],
+                "psr-4": {
+                    "Dgame\\Type\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Randy Schuett",
+                    "email": "rswhite4@gmail.com",
+                    "homepage": "https://github.com/php-type"
+                }
+            ],
+            "description": "php type",
+            "homepage": "https://github.com/php-type",
+            "time": "2018-05-08T13:06:59+00:00"
         },
         {
             "name": "monolog/monolog",

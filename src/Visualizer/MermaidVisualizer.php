@@ -3,16 +3,13 @@
 namespace Dgame\Graph\Visualizer;
 
 use Dgame\Graph\Graph;
-use Dgame\Graph\Node\NodeInterface;
-use Dgame\Graph\Node\NodeVisitorInterface;
-use Dgame\Graph\Node\ProcessNodeInterface;
-use Dgame\Graph\Node\TransitionNodeInterface;
+use Dgame\Graph\NodeInterface;
 
 /**
  * Class MermaidVisualizer
  * @package Dgame\Graph\Visualizer
  */
-final class MermaidVisualizer implements VisualizerInterface, NodeVisitorInterface
+final class MermaidVisualizer
 {
     /**
      * @var int
@@ -43,15 +40,33 @@ final class MermaidVisualizer implements VisualizerInterface, NodeVisitorInterfa
     public function __construct(Graph $graph)
     {
         foreach ($graph->getNodes() as $node) {
-            $node->accept($this);
+            $this->visualizeNode($node);
         }
     }
 
     /**
+     * @param NodeInterface $node
+     */
+    private function visualizeNode(NodeInterface $node): void
+    {
+        $sourceNode = $this->getMermaidNodeOf($node);
+        foreach ($node->getTransitions() as $node) {
+            $targetNode      = $this->getMermaidNodeOf($node);
+            $this->mermaid[] = sprintf('%s-->%s', $sourceNode, $targetNode);
+        }
+    }
+
+    /**
+     * @param string $direction
+     *
      * @return array
      */
-    public function getVisualized(): array
+    public function getMermaidDiagram(string $direction = 'TD'): array
     {
+        if (!empty($this->mermaid)) {
+            array_unshift($this->mermaid, 'graph ' . $direction);
+        }
+
         return $this->mermaid;
     }
 
@@ -65,6 +80,10 @@ final class MermaidVisualizer implements VisualizerInterface, NodeVisitorInterfa
         $name = $node->getName();
         if ($this->hasAlias($name)) {
             return $this->getAliasOf($node);
+        }
+
+        if (!$node->hasTransitions()) {
+            return $name;
         }
 
         $alias    = $this->getAliasOf($node);
@@ -83,7 +102,7 @@ final class MermaidVisualizer implements VisualizerInterface, NodeVisitorInterfa
      */
     private function getMermaidNodeContentOf(NodeInterface $node): string
     {
-        return $node->hasDescription() ? $node->getDescription() : $node->getName();
+        return $node->getName();
     }
 
     /**
@@ -124,41 +143,6 @@ final class MermaidVisualizer implements VisualizerInterface, NodeVisitorInterfa
         $letter = chr($this->letter + 64);
         $this->letter++;
 
-        return sprintf('%s%d', $letter, $this->index);
-    }
-
-    /**
-     * @param NodeInterface $node
-     */
-    public function visitNode(NodeInterface $node): void
-    {
-        $alias    = $this->getAliasOf($node);
-        $template = new MermaidTemplate($node);
-
-        $this->mermaid[] = sprintf($template->getTemplate(), $alias, $this->getMermaidNodeContentOf($node));
-    }
-
-    /**
-     * @param TransitionNodeInterface $node
-     */
-    public function visitTransitionNode(TransitionNodeInterface $node): void
-    {
-        $sourceNode = $this->getMermaidNodeOf($node);
-        foreach ($node->getTransitions() as $transition) {
-            $targetNode = $this->getMermaidNodeOf($transition->getNode());
-            if ($transition->hasDescription()) {
-                $this->mermaid[] = sprintf('%s-->|%s| %s', $sourceNode, $transition->getDescription(), $targetNode);
-            } else {
-                $this->mermaid[] = sprintf('%s-->%s', $sourceNode, $targetNode);
-            }
-        }
-    }
-
-    /**
-     * @param ProcessNodeInterface $node
-     */
-    public function visitProcessNode(ProcessNodeInterface $node): void
-    {
-        $this->visitTransitionNode($node);
+        return sprintf('__%s_%d', $letter, $this->index);
     }
 }

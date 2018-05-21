@@ -2,20 +2,17 @@
 
 namespace Dgame\Graph\Visualizer;
 
-use Dgame\Graph\Node\NodeInterface;
-use Dgame\Graph\Node\NodeVisitorInterface;
-use Dgame\Graph\Node\ProcessNodeInterface;
-use Dgame\Graph\Node\TransitionNodeInterface;
+use Dgame\Graph\NodeInterface;
 
 /**
  * Class MermaidTemplate
  * @package Dgame\Graph\Visualizer
  */
-final class MermaidTemplate implements NodeVisitorInterface
+final class MermaidTemplate
 {
-    private const BRACKET    = '%s[%s]';
-    private const ROUND      = '%s(%s)';
-    private const TRANSITION = '%s{%s}';
+    private const BRACKET = '%s[%s]';
+    private const ROUND   = '%s(%s)';
+    private const DIAMOND = '%s{%s}';
 
     /**
      * @var string
@@ -29,7 +26,7 @@ final class MermaidTemplate implements NodeVisitorInterface
      */
     public function __construct(NodeInterface $node)
     {
-        $node->accept($this);
+        $this->visualizeNode($node);
     }
 
     /**
@@ -43,28 +40,12 @@ final class MermaidTemplate implements NodeVisitorInterface
     /**
      * @param NodeInterface $node
      */
-    public function visitNode(NodeInterface $node): void
-    {
-        $this->template = self::BRACKET;
-    }
-
-    /**
-     * @param TransitionNodeInterface $node
-     */
-    public function visitTransitionNode(TransitionNodeInterface $node): void
+    public function visualizeNode(NodeInterface $node): void
     {
         if ($node->hasTransitions()) {
-            $this->template = count($node->getTransitions()) === 1 ? self::BRACKET : self::TRANSITION;
+            $this->template = count($node->getTransitions()) === 1 ? self::BRACKET : self::DIAMOND;
         } else {
             $this->template = self::ROUND;
         }
-    }
-
-    /**
-     * @param ProcessNodeInterface $node
-     */
-    public function visitProcessNode(ProcessNodeInterface $node): void
-    {
-        $this->visitTransitionNode($node);
     }
 }

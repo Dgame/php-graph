@@ -3,40 +3,28 @@
 namespace Dgame\Graph;
 
 use Dgame\Graph\Exception\ItemNotFoundException;
-use Dgame\Graph\Trace\NodeStateTracerInterface;
 use Psr\Container\ContainerInterface;
-use Psr\Log\LoggerInterface;
 use function Dgame\Ensurance\enforce;
 
 /**
  * Class Context
  * @package Dgame\Graph
  */
-final class Context implements ContainerInterface, AbortableInterface
+final class Context implements ContainerInterface
 {
     /**
      * @var array
      */
     private $context = [];
-    /**
-     * @var \SplStack
-     */
-    private $aborts;
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
-    /**
-     * @var NodeStateTracerInterface
-     */
-    private $tracer;
 
     /**
      * Context constructor.
+     *
+     * @param array $context
      */
-    public function __construct()
+    public function __construct(array $context = [])
     {
-        $this->aborts = new \SplStack();
+        $this->context = $context;
     }
 
     /**
@@ -46,6 +34,15 @@ final class Context implements ContainerInterface, AbortableInterface
     public function set(string $name, $value): void
     {
         $this->context[$name] = $value;
+    }
+
+    /**
+     * @param string $name
+     * @param        $value
+     */
+    public function appendTo(string $name, $value): void
+    {
+        $this->context[$name][] = $value;
     }
 
     /**
@@ -72,42 +69,28 @@ final class Context implements ContainerInterface, AbortableInterface
 
     /**
      * @param string $name
-     * @param null   $default
+     * @param mixed  $default
      *
-     * @return mixed|null
+     * @return mixed
      */
-    public function getOrDefault(string $name, $default = null)
+    public function getOrDefault(string $name, $default)
     {
         return $this->has($name) ? $this->get($name) : $default;
     }
 
     /**
-     * @param string|null $message
+     * @param string $name
+     * @param        $value
+     *
+     * @return mixed
      */
-    public function abort(string $message = null): void
+    public function getOrSet(string $name, $value)
     {
-        $this->aborts->push($message);
-    }
-
-    /**
-     * @return bool
-     */
-    public function isAborted(): bool
-    {
-        return $this->aborts->isEmpty();
-    }
-
-    /**
-     * @return string
-     */
-    public function getAbortMessage(): string
-    {
-        $messages = [];
-        while (!$this->aborts->isEmpty()) {
-            $messages[] = $this->aborts->pop();
+        if (!$this->has($name)) {
+            $this->set($name, $value);
         }
 
-        return implode(PHP_EOL, $messages);
+        return $this->get($name);
     }
 
     /**
@@ -117,7 +100,9 @@ final class Context implements ContainerInterface, AbortableInterface
      */
     public function getAsInt(string $name): int
     {
-        return $this->getOrDefault($name, 0);
+        $value = $this->getOrDefault($name, 0);
+
+        return filter_var($value, FILTER_VALIDATE_INT, ['options' => ['default' => 0]]);
     }
 
     /**
@@ -127,7 +112,9 @@ final class Context implements ContainerInterface, AbortableInterface
      */
     public function getAsBool(string $name): bool
     {
-        return $this->getOrDefault($name, false);
+        $value = $this->getOrDefault($name, false);
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 
     /**
@@ -144,53 +131,5 @@ final class Context implements ContainerInterface, AbortableInterface
     public function clear(): void
     {
         $this->context = [];
-    }
-
-    /**
-     * @param LoggerInterface $logger
-     */
-    public function setLogger(LoggerInterface $logger): void
-    {
-        $this->logger = $logger;
-    }
-
-    /**
-     * @return bool
-     */
-    public function hasLogger(): bool
-    {
-        return $this->logger !== null;
-    }
-
-    /**
-     * @return LoggerInterface
-     */
-    public function getLogger(): LoggerInterface
-    {
-        return $this->logger;
-    }
-
-    /**
-     * @param NodeStateTracerInterface $tracer
-     */
-    public function setNodeStateTracer(NodeStateTracerInterface $tracer): void
-    {
-        $this->tracer = $tracer;
-    }
-
-    /**
-     * @return bool
-     */
-    public function hasNodeStateTracer(): bool
-    {
-        return $this->tracer !== null;
-    }
-
-    /**
-     * @return NodeStateTracerInterface
-     */
-    public function getNodeStateTracer(): NodeStateTracerInterface
-    {
-        return $this->tracer;
     }
 }

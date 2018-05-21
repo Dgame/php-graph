@@ -11,6 +11,11 @@ use Psr\Container\NotFoundExceptionInterface;
  */
 final class ItemNotFoundException extends EnsuranceFormatException implements NotFoundExceptionInterface
 {
+    /**
+     * ItemNotFoundException constructor.
+     *
+     * @param string $name
+     */
     public function __construct(string $name)
     {
         parent::__construct('Item "%s" was not found', $name);
