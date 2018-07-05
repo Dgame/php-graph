@@ -63,8 +63,8 @@ final class Graph
     public function setTransitions(array $transitions, callable $condition = null)
     {
         $condition = $condition ?? function (): bool {
-            return true;
-        };
+                return true;
+            };
 
         foreach ($transitions as $source => $targets) {
             $source = trim($source);
@@ -74,37 +74,33 @@ final class Graph
             foreach ($targets as $key => $target) {
                 if (is_int($key)) {
                     $this->transitions[$source][$target] = $condition;
+                } elseif (is_bool($target)) {
+                    $cond = function (Context $context) use ($source, $condition, $target): bool {
+                        return $context->getAsBool($source) === $target && $condition($context);
+                    };
+
+                    $this->setTransitions([$source => $key], $cond);
+                } elseif (is_callable($target)) {
+                    $cond = function (Context $context) use ($condition, $target): bool {
+                        return $condition($context) && $target($context);
+                    };
+
+                    $this->setTransitions([$source => $key], $cond);
                 } else {
-                    if (is_bool($target)) {
-                        $cond = function (Context $context) use ($source, $condition, $target): bool {
-                            return $context->getAsBool($source) === $target && $condition($context);
-                        };
+                    $target = trim($target);
+                    assert(!empty($target));
 
-                        $this->setTransitions([$source => $key], $cond);
-                    } else {
-                        if (is_callable($target)) {
-                            $cond = function (Context $context) use ($condition, $target): bool {
-                                return $condition($context) && $target($context);
-                            };
-
-                            $this->setTransitions([$source => $key], $cond);
-                        } else {
-                            $target = trim($target);
-                            assert(!empty($target));
-
-                            $cond = function (Context $context) use ($source, $condition, $target): bool {
-                                $value = true;
-                                if ($target[0] === '!') {
-                                    $target = substr($target, 1);
-                                    $value  = false;
-                                }
-
-                                return $context->getAsBool($target) === $value && $condition($context);
-                            };
-
-                            $this->setTransitions([$source => $key], $cond);
+                    $cond = function (Context $context) use ($source, $condition, $target): bool {
+                        $value = true;
+                        if ($target[0] === '!') {
+                            $target = substr($target, 1);
+                            $value  = false;
                         }
-                    }
+
+                        return $context->getAsBool($target) === $value && $condition($context);
+                    };
+
+                    $this->setTransitions([$source => $key], $cond);
                 }
             }
         }
