@@ -63,8 +63,8 @@ final class Graph
     public function setTransitions(array $transitions, callable $condition = null)
     {
         $condition = $condition ?? function (): bool {
-            return true;
-        };
+                return true;
+            };
 
         foreach ($transitions as $source => $targets) {
             $source = trim($source);
@@ -101,11 +101,12 @@ final class Graph
     }
 
     /**
-     * @param string  $key
-     * @param Context $context
+     * @param string       $key
+     * @param Context|null $context
      */
-    public function launch(string $key, Context $context): void
+    public function launch(string $key, Context $context = null): void
     {
+        $context = $context ?? new Context();
         $closure = $this->nodes[$key];
         $result  = $closure($context);
         $context->set($key, $result === null ? true : (bool) $result);
