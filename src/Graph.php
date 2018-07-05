@@ -11,67 +11,116 @@ use Exception;
 final class Graph
 {
     /**
-     * @var NodeInterface[]
+     * @var array
      */
     private $nodes = [];
+    /**
+     * @var array
+     */
+    private $transitions = [];
 
     /**
-     * @return NodeInterface[]
+     * @return string[]
      */
-    public function getNodes(): array
+    public function getNodeNames(): array
     {
-        return $this->nodes;
+        return array_keys($this->nodes);
     }
 
     /**
      * @param string $name
      *
-     * @return NodeInterface
-     * @throws Exception
+     * @return array
      */
-    private function getNodeByName(string $name): NodeInterface
+    public function getTransitionNamesOfNode(string $name): array
     {
-        foreach ($this->nodes as $index => $node) {
-            if ($node->getName() === $name) {
-                return $node;
+        return array_keys($this->getTransitionsOfNode($name));
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return array
+     */
+    private function getTransitionsOfNode(string $name): array
+    {
+        return $this->transitions[$name] ?? [];
+    }
+
+    /**
+     * @param string   $name
+     * @param callable $closure
+     */
+    public function insert(string $name, callable $closure): void
+    {
+        $this->nodes[$name] = $closure;
+    }
+
+    /**
+     * @param array         $transitions
+     * @param callable|null $condition
+     */
+    public function setTransitions(array $transitions, callable $condition = null)
+    {
+        $condition = $condition ?? function (): bool {
+                return true;
+            };
+
+        foreach ($transitions as $source => $targets) {
+            $source = trim($source);
+            assert(!empty($source));
+
+            $targets = is_array($targets) ? $targets : [$targets];
+            foreach ($targets as $key => $target) {
+                if (is_int($key)) {
+                    $this->transitions[$source][$target] = $condition;
+                } else if (is_bool($target)) {
+                    $cond = function (Context $context) use ($source, $condition, $target): bool {
+                        return $context->getAsBool($source) === $target && $condition($context);
+                    };
+
+                    $this->setTransitions([$source => $key], $cond);
+                } else if (is_callable($target)) {
+                    $cond = function (Context $context) use ($condition, $target): bool {
+                        return $condition($context) && $target($context);
+                    };
+
+                    $this->setTransitions([$source => $key], $cond);
+                } else {
+                    $target = trim($target);
+                    assert(!empty($target));
+
+                    $cond = function (Context $context) use ($source, $condition, $target): bool {
+                        $value = true;
+                        if ($target[0] === '!') {
+                            $target = substr($target, 1);
+                            $value  = false;
+                        }
+
+                        return $context->getAsBool($target) === $value && $condition($context);
+                    };
+
+                    $this->setTransitions([$source => $key], $cond);
+                }
             }
         }
-
-        throw new Exception('No node with name ', $name);
     }
 
     /**
-     * @param callable    $closure
-     * @param string|null $name
-     */
-    public function insert(callable $closure, string $name = null): void
-    {
-        $this->nodes[] = new Node($name ?? uniqid(), $closure);
-    }
-
-    /**
-     * @param string $from
-     * @param string $to
-     *
-     * @throws Exception
-     */
-    public function setTransition(string $from, string $to): void
-    {
-        $lhs = $this->getNodeByName($from);
-        $rhs = $this->getNodeByName($to);
-
-        $lhs->setTransitionTo($rhs);
-    }
-
-    /**
-     * @param string  $name
+     * @param string  $key
      * @param Context $context
-     *
-     * @throws Exception
      */
-    public function traverse(string $name, Context $context): void
+    public function launch(string $key, Context $context): void
     {
-        $this->getNodeByName($name)->executeWith($context);
+        $closure = $this->nodes[$key];
+        $result  = $closure($context);
+        $context->set($key, $result === null ? true : (bool) $result);
+
+        foreach ($this->getTransitionsOfNode($key) as $key => $condition) {
+            if ($condition($context)) {
+                $this->launch($key, $context);
+            }
+        }
     }
 
     /**
@@ -82,82 +131,75 @@ final class Graph
      */
     public function isCyclic(string $source): bool
     {
-        $isCyclic = function (array $nodes, array $visited) use (&$isCyclic): bool {
-            foreach ($nodes as $node) {
-                $name = $node->getName();
-                if (array_key_exists($name, $visited)) {
+        $isCyclic    = function (array $transitions, array $visited) use (&$isCyclic): bool {
+            foreach (array_keys($transitions) as $key) {
+                if (array_key_exists($key, $visited)) {
                     return true;
                 }
-
-                $visited[$name] = true;
-
-                if ($isCyclic($node->getTransitions(), $visited)) {
+                $visited[$key] = true;
+                $transitions   = $this->getTransitionsOfNode($key);
+                if ($isCyclic($transitions, $visited)) {
                     return true;
                 }
             }
 
             return false;
         };
+        $transitions = $this->getTransitionsOfNode($source);
 
-        $node = $this->getNodeByName($source);
+        return $isCyclic($transitions, []);
+    }
 
-        return $isCyclic($node->getTransitions(), []);
+    /**
+     * @param array $transition
+     *
+     * @return bool
+     */
+    public function canReach(array $transition): bool
+    {
+        $source = key($transition);
+        $target = current($transition);
+
+        $canReach    = function (array $transitions, array $visited) use (&$canReach, $target): bool {
+            foreach (array_keys($transitions) as $key) {
+                if (array_key_exists($key, $visited)) {
+                    continue;
+                }
+                $visited[$key] = true;
+                if ($key === $target) {
+                    return true;
+                }
+                $transitions = $this->getTransitionsOfNode($key);
+                if ($canReach($transitions, $visited)) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+        $transitions = $this->getTransitionsOfNode($source);
+
+        return $canReach($transitions, []);
     }
 
     /**
      * @param string $source
-     * @param string $target
      *
      * @return bool
-     * @throws Exception
      */
-    public function canReach(string $source, string $target): bool
-    {
-        $canReach = function (array $nodes, array $visited) use (&$canReach, $target): bool {
-            foreach ($nodes as $node) {
-                $name = $node->getName();
-                if (array_key_exists($name, $visited)) {
-                    continue;
-                }
-
-                $visited[$name] = true;
-
-                if ($name === $target) {
-                    return true;
-                }
-
-                if ($canReach($node->getTransitions(), $visited)) {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
-        $node = $this->getNodeByName($source);
-
-        return $canReach($node->getTransitions(), []);
-    }
-
-    /**
-     * @return bool
-     */
-    public function isConnected(): bool
+    public function isComplete(string $source): bool
     {
         $isConnected = function (array $nodes, array $visited) use (&$isConnected, $source): bool {
-            foreach ($nodes as $node) {
-                $name = $node->getName();
-                if (array_key_exists($name, $visited)) {
+            foreach (array_keys($nodes) as $key) {
+                if (array_key_exists($key, $visited)) {
                     continue;
                 }
-
-                $visited[$name] = true;
-
-                if (!$this->canReach($source, $name)) {
+                $visited[$key] = true;
+                if (!$this->canReach([$source => $key])) {
                     return false;
                 }
-
-                if ($isConnected($node->getTransitions(), $visited)) {
+                $transitions = $this->getTransitionsOfNode($key);
+                if ($isConnected($transitions, $visited)) {
                     return true;
                 }
             }
@@ -176,27 +218,23 @@ final class Graph
      */
     public function getTargets(string $source): array
     {
-        $targets = [];
-
-        $traverse = function (array $nodes, array $visited) use (&$traverse, &$targets) {
-            foreach ($nodes as $node) {
-                $name = $node->getName();
-                if (array_key_exists($name, $visited)) {
+        $targets     = [];
+        $traverse    = function (array $transitions, array $visited) use (&$traverse, &$targets) {
+            foreach (array_keys($transitions) as $key) {
+                if (array_key_exists($key, $visited)) {
                     continue;
                 }
-
-                $visited[$name] = true;
-
-                if (!$node->hasTransitions()) {
-                    $targets[] = $name;
+                $visited[$key] = true;
+                $transitions   = $this->getTransitionsOfNode($key);
+                if (empty($transitions)) {
+                    $targets[] = $key;
                 } else {
-                    $traverse($node->getTransitions(), $visited);
+                    $traverse($transitions, $visited);
                 }
             }
         };
-
-        $node = $this->getNodeByName($source);
-        $traverse($node->getTransitions(), []);
+        $transitions = $this->getTransitionsOfNode($source);
+        $traverse($transitions, []);
 
         return $targets;
     }

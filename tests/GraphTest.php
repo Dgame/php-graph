@@ -11,92 +11,103 @@ use PHPUnit\Framework\TestCase;
  */
 final class GraphTest extends TestCase
 {
+    /**
+     *
+     */
     public function testTraverse()
     {
         $graph = new Graph();
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'A');
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'B');
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'C');
+        $graph->insert('A', function () {
+            print 'A' . PHP_EOL;
+        });
+        $graph->insert('B', function () {
+            print 'B' . PHP_EOL;
+        });
+        $graph->insert('C', function () {
+            print 'C' . PHP_EOL;
+        });
 
-        $graph->setTransition('A', 'C');
-        $graph->setTransition('C', 'B');
+        $graph->setTransitions(['A' => 'C']);
+        $graph->setTransitions(['C' => 'B']);
 
         $context = new Context();
         ob_start();
-        $graph->traverse('A', $context);
+        $graph->launch('A', $context);
         $content = ob_get_clean();
 
         $this->assertEquals(['A', 'C', 'B'], explode(PHP_EOL, trim($content)));
     }
 
+    /**
+     * @throws \Exception
+     */
     public function testIsCyclic()
     {
         $graph = new Graph();
-        $graph->insert(function () {
-        }, 'A');
-        $graph->insert(function () {
-        }, 'B');
-        $graph->insert(function () {
-        }, 'C');
+        $graph->insert('A', function () {
+        });
+        $graph->insert('B', function () {
+        });
+        $graph->insert('C', function () {
+        });
 
-        $graph->setTransition('A', 'C');
-        $graph->setTransition('C', 'B');
+        $graph->setTransitions(['A' => 'C', 'C' => 'B']);
 
         $this->assertFalse($graph->isCyclic('A'));
         $this->assertFalse($graph->isCyclic('B'));
         $this->assertFalse($graph->isCyclic('C'));
 
-        $graph->setTransition('B', 'A');
+        $graph->setTransitions(['B' => 'A']);
 
         $this->assertTrue($graph->isCyclic('A'));
         $this->assertTrue($graph->isCyclic('B'));
         $this->assertTrue($graph->isCyclic('C'));
     }
 
+    /**
+     * @throws \Exception
+     */
     public function testCanReach()
     {
         $graph = new Graph();
-        $graph->insert(function () {
-        }, 'A');
-        $graph->insert(function () {
-        }, 'B');
-        $graph->insert(function () {
-        }, 'C');
+        $graph->insert('A', function () {
+        });
+        $graph->insert('B', function () {
+        });
+        $graph->insert('C', function () {
+        });
 
-        $graph->setTransition('A', 'C');
+        $graph->setTransitions(['A' => 'C']);
 
-        $this->assertFalse($graph->canReach('A', 'B'));
-        $this->assertTrue($graph->canReach('A', 'C'));
+        $this->assertFalse($graph->canReach(['A' => 'B']));
+        $this->assertTrue($graph->canReach(['A' => 'C']));
 
-        $graph->setTransition('C', 'B');
+        $graph->setTransitions(['C' => 'B']);
 
-        $this->assertTrue($graph->canReach('A', 'B'));
+        $this->assertTrue($graph->canReach(['A' => 'B']));
     }
 
+    /**
+     * @throws \Exception
+     */
     public function testGetTargets()
     {
         $graph = new Graph();
-        $graph->insert(function () {
-        }, 'A');
-        $graph->insert(function () {
-        }, 'B');
-        $graph->insert(function () {
-        }, 'C');
+        $graph->insert('A', function () {
+        });
+        $graph->insert('B', function () {
+        });
+        $graph->insert('C', function () {
+        });
 
-        $graph->setTransition('A', 'C');
-        $graph->setTransition('C', 'B');
+        $graph->setTransitions(['A' => 'C']);
+        $graph->setTransitions(['C' => 'B']);
 
         $this->assertEquals(['B'], $graph->getTargets('A'));
         $this->assertEmpty($graph->getTargets('B'));
         $this->assertEquals(['B'], $graph->getTargets('C'));
 
-        $graph->setTransition('B', 'A');
+        $graph->setTransitions(['B' => 'A']);
 
         $this->assertEmpty($graph->getTargets('A'));
         $this->assertEmpty($graph->getTargets('B'));

@@ -2,7 +2,7 @@
 
 namespace Dgame\Graph\Visualizer;
 
-use Dgame\Graph\NodeInterface;
+use Dgame\Graph\Graph;
 
 /**
  * Class MermaidTemplate
@@ -22,11 +22,12 @@ final class MermaidTemplate
     /**
      * MermaidTemplate constructor.
      *
-     * @param NodeInterface $node
+     * @param string $name
+     * @param Graph  $graph
      */
-    public function __construct(NodeInterface $node)
+    public function __construct(string $name, Graph $graph)
     {
-        $this->visualizeNode($node);
+        $this->visualizeNode($name, $graph);
     }
 
     /**
@@ -38,12 +39,15 @@ final class MermaidTemplate
     }
 
     /**
-     * @param NodeInterface $node
+     * @param string $name
+     * @param Graph  $graph
      */
-    public function visualizeNode(NodeInterface $node): void
+    public function visualizeNode(string $name, Graph $graph): void
     {
-        if ($node->hasTransitions()) {
-            $this->template = count($node->getTransitions()) === 1 ? self::BRACKET : self::DIAMOND;
+        $transitions = $graph->getTransitionNamesOfNode($name);
+        $count       = count($transitions);
+        if ($count !== 0) {
+            $this->template = $count === 1 ? self::BRACKET : self::DIAMOND;
         } else {
             $this->template = self::ROUND;
         }

@@ -3,7 +3,6 @@
 namespace Dgame\Graph\Visualizer;
 
 use Dgame\Graph\Graph;
-use Dgame\Graph\NodeInterface;
 
 /**
  * Class MermaidVisualizer
@@ -11,6 +10,10 @@ use Dgame\Graph\NodeInterface;
  */
 final class MermaidVisualizer
 {
+    /**
+     * @var Graph
+     */
+    private $graph;
     /**
      * @var int
      */
@@ -39,19 +42,21 @@ final class MermaidVisualizer
      */
     public function __construct(Graph $graph)
     {
-        foreach ($graph->getNodes() as $node) {
-            $this->visualizeNode($node);
+        $this->graph = $graph;
+
+        foreach ($graph->getNodeNames() as $name) {
+            $this->visualizeNode($name);
         }
     }
 
     /**
-     * @param NodeInterface $node
+     * @param string $name
      */
-    private function visualizeNode(NodeInterface $node): void
+    private function visualizeNode(string $name): void
     {
-        $sourceNode = $this->getMermaidNodeOf($node);
-        foreach ($node->getTransitions() as $node) {
-            $targetNode      = $this->getMermaidNodeOf($node);
+        $sourceNode = $this->getMermaidNodeOf($name);
+        foreach ($this->graph->getTransitionNamesOfNode($name) as $name) {
+            $targetNode      = $this->getMermaidNodeOf($name);
             $this->mermaid[] = sprintf('%s-->%s', $sourceNode, $targetNode);
         }
     }
@@ -71,38 +76,28 @@ final class MermaidVisualizer
     }
 
     /**
-     * @param NodeInterface $node
+     * @param string $name
      *
      * @return string
      */
-    private function getMermaidNodeOf(NodeInterface $node): string
+    private function getMermaidNodeOf(string $name): string
     {
-        $name = $node->getName();
         if ($this->hasAlias($name)) {
-            return $this->getAliasOf($node);
+            return $this->getAliasOf($name);
         }
 
-        if (!$node->hasTransitions()) {
+        $transitions = $this->graph->getTransitionNamesOfNode($name);
+        if (empty($transitions)) {
             return $name;
         }
 
-        $alias    = $this->getAliasOf($node);
-        $template = new MermaidTemplate($node);
+        $alias    = $this->getAliasOf($name);
+        $template = new MermaidTemplate($name, $this->graph);
 
-        $mermaidNode        = sprintf($template->getTemplate(), $alias, $this->getMermaidNodeContentOf($node));
+        $mermaidNode        = sprintf($template->getTemplate(), $alias, $name);
         $this->nodes[$name] = $mermaidNode;
 
         return $mermaidNode;
-    }
-
-    /**
-     * @param NodeInterface $node
-     *
-     * @return string
-     */
-    private function getMermaidNodeContentOf(NodeInterface $node): string
-    {
-        return $node->getName();
     }
 
     /**
@@ -116,13 +111,12 @@ final class MermaidVisualizer
     }
 
     /**
-     * @param NodeInterface $node
+     * @param string $name
      *
      * @return string
      */
-    private function getAliasOf(NodeInterface $node): string
+    private function getAliasOf(string $name): string
     {
-        $name = $node->getName();
         if (!$this->hasAlias($name)) {
             $this->alias[$name] = $this->getNextAlias();
         }

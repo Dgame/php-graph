@@ -15,15 +15,15 @@ final class MermaidVisualizerTest extends TestCase
     public function testEmptyMermaidDiagram()
     {
         $graph = new Graph();
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'A');
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'B');
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'C');
+        $graph->insert('A', function () {
+            print 'A' . PHP_EOL;
+        });
+        $graph->insert('B', function () {
+            print 'B' . PHP_EOL;
+        });
+        $graph->insert('C', function () {
+            print 'C' . PHP_EOL;
+        });
 
         $visualizer = new MermaidVisualizer($graph);
         $this->assertEmpty($visualizer->getMermaidDiagram());
@@ -32,18 +32,18 @@ final class MermaidVisualizerTest extends TestCase
     public function testMermaidDiagram()
     {
         $graph = new Graph();
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'A');
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'B');
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'C');
+        $graph->insert('A', function () {
+            print 'A' . PHP_EOL;
+        });
+        $graph->insert('B', function () {
+            print 'B' . PHP_EOL;
+        });
+        $graph->insert('C', function () {
+            print 'C' . PHP_EOL;
+        });
 
-        $graph->setTransition('A', 'C');
-        $graph->setTransition('C', 'B');
+        $graph->setTransitions(['A' => 'C']);
+        $graph->setTransitions(['C' => 'B']);
 
         $visualizer = new MermaidVisualizer($graph);
         $this->assertEquals(['graph TD', '__A_1[A]-->__B_1[C]', '__B_1-->B'], $visualizer->getMermaidDiagram());
@@ -52,19 +52,19 @@ final class MermaidVisualizerTest extends TestCase
     public function testCyclicMermaidDiagram()
     {
         $graph = new Graph();
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'A');
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'B');
-        $graph->insert(function () {
-            print $this->getName() . PHP_EOL;
-        }, 'C');
+        $graph->insert('A', function () {
+            print 'A' . PHP_EOL;
+        });
+        $graph->insert('B', function () {
+            print 'B' . PHP_EOL;
+        });
+        $graph->insert('C', function () {
+            print 'C' . PHP_EOL;
+        });
 
-        $graph->setTransition('A', 'C');
-        $graph->setTransition('C', 'B');
-        $graph->setTransition('B', 'A');
+        $graph->setTransitions(['A' => 'C']);
+        $graph->setTransitions(['C' => 'B']);
+        $graph->setTransitions(['B' => 'A']);
 
         $visualizer = new MermaidVisualizer($graph);
         $this->assertEquals(['graph TD', '__A_1[A]-->__B_1[C]', '__C_1[B]-->__A_1', '__B_1-->__C_1'], $visualizer->getMermaidDiagram());
