@@ -57,8 +57,8 @@ final class MermaidVisualizer
         $sourceNode = $this->getMermaidNodeOf($source);
         foreach ($this->graph->getTransitionNamesOfNode($source) as $target) {
             $targetNode = $this->getMermaidNodeOf($target);
-            $condition = $this->graph->getTransitionCondition([$source => $target]);
-            $condition = empty($condition) ? '' : sprintf('|%s|', $condition);
+            $condition  = $this->graph->getTransitionCondition([$source => $target]);
+            $condition  = empty($condition) ? '' : sprintf('|%s|', $condition);
 
             $this->mermaid[] = sprintf('%s-->%s%s', $sourceNode, $condition, $targetNode);
         }

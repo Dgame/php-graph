@@ -80,8 +80,8 @@ final class Graph
     public function setTransitions(array $transitions, callable $condition = null)
     {
         $condition = $condition ?? function (): bool {
-                return true;
-            };
+            return true;
+        };
 
         foreach ($transitions as $source => $targets) {
             $source = trim($source);
