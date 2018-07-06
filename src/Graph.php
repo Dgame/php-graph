@@ -18,6 +18,10 @@ final class Graph
      * @var array
      */
     private $transitions = [];
+    /**
+     * @var array
+     */
+    private $transitionConditions = [];
 
     /**
      * @return string[]
@@ -35,6 +39,19 @@ final class Graph
     public function getTransitionNamesOfNode(string $name): array
     {
         return array_keys($this->getTransitionsOfNode($name));
+    }
+
+    /**
+     * @param array $transition
+     *
+     * @return string
+     */
+    public function getTransitionCondition(array $transition): string
+    {
+        $source = key($transition);
+        $target = current($transition);
+
+        return $this->transitionConditions[$source][$target] ?? '';
     }
 
     /**
@@ -63,8 +80,8 @@ final class Graph
     public function setTransitions(array $transitions, callable $condition = null)
     {
         $condition = $condition ?? function (): bool {
-            return true;
-        };
+                return true;
+            };
 
         foreach ($transitions as $source => $targets) {
             $source = trim($source);
@@ -75,16 +92,22 @@ final class Graph
                 if (is_int($key)) {
                     $this->transitions[$source][$target] = $condition;
                 } elseif (is_bool($target)) {
+                    $this->setTransitionCondition([$source => $key], var_export($target, true));
+
                     $this->setTransitions([$source => $key], function (Context $context) use ($source, $condition, $target): bool {
-                        return $context->getAsBool($source) === $target && $condition($context);
+                        return $context->getFromHistory($source) === $target && $condition($context);
                     });
                 } elseif (is_callable($target)) {
+                    $this->setTransitionCondition([$source => $key], '?');
+
                     $this->setTransitions([$source => $key], function (Context $context) use ($condition, $target): bool {
                         return $condition($context) && $target($context);
                     });
                 } else {
                     $target = trim($target);
                     assert(!empty($target));
+
+                    $this->setTransitionCondition([$source => $key], 'if ' . $target);
 
                     $this->setTransitions([$source => $key], function (Context $context) use ($source, $condition, $target): bool {
                         $value = true;
@@ -93,7 +116,7 @@ final class Graph
                             $value  = false;
                         }
 
-                        return $context->getAsBool($target) === $value && $condition($context);
+                        return $context->getFromHistory($target) === $value && $condition($context);
                     });
                 }
             }
@@ -101,19 +124,57 @@ final class Graph
     }
 
     /**
+     * @param array  $transition
+     * @param string $condition
+     */
+    private function setTransitionCondition(array $transition, string $condition): void
+    {
+        $source = key($transition);
+        $target = current($transition);
+
+        if (!array_key_exists($source, $this->transitionConditions)) {
+            $this->transitionConditions[$source] = [];
+        }
+
+        $this->transitionConditions[$source][$target] = $condition;
+    }
+
+    /**
      * @param string       $key
      * @param Context|null $context
+     *
+     * @return Context
+     * @throws Exception
      */
-    public function launch(string $key, Context $context = null): void
+    public function launch(string $key, Context $context = null): Context
     {
+        $uuid = bin2hex(random_bytes(16));
+
         $context = $context ?? new Context();
+        $context->clearHistory();
+        $context->setUuid($uuid);
+
+        $this->run($key, $context);
+
+        return $context;
+    }
+
+    /**
+     * @param string  $key
+     * @param Context $context
+     *
+     * @throws Exception
+     */
+    private function run(string $key, Context $context): void
+    {
         $closure = $this->nodes[$key];
         $result  = $closure($context);
-        $context->set($key, $result === null ? true : (bool) $result);
+
+        $context->setHistory($key, $result === null ? true : (bool) $result);
 
         foreach ($this->getTransitionsOfNode($key) as $key => $condition) {
             if ($condition($context)) {
-                $this->launch($key, $context);
+                $this->run($key, $context);
             }
         }
     }
@@ -131,6 +192,7 @@ final class Graph
                 if (array_key_exists($key, $visited)) {
                     return true;
                 }
+
                 $visited[$key] = true;
                 $transitions   = $this->getTransitionsOfNode($key);
                 if ($isCyclic($transitions, $visited)) {
@@ -160,10 +222,12 @@ final class Graph
                 if (array_key_exists($key, $visited)) {
                     continue;
                 }
+
                 $visited[$key] = true;
                 if ($key === $target) {
                     return true;
                 }
+
                 $transitions = $this->getTransitionsOfNode($key);
                 if ($canReach($transitions, $visited)) {
                     return true;
@@ -189,10 +253,12 @@ final class Graph
                 if (array_key_exists($key, $visited)) {
                     continue;
                 }
+
                 $visited[$key] = true;
                 if (!$this->canReach([$source => $key])) {
                     return false;
                 }
+
                 $transitions = $this->getTransitionsOfNode($key);
                 if ($isConnected($transitions, $visited)) {
                     return true;
@@ -219,6 +285,7 @@ final class Graph
                 if (array_key_exists($key, $visited)) {
                     continue;
                 }
+
                 $visited[$key] = true;
                 $transitions   = $this->getTransitionsOfNode($key);
                 if (empty($transitions)) {

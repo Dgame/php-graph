@@ -50,14 +50,17 @@ final class MermaidVisualizer
     }
 
     /**
-     * @param string $name
+     * @param string $source
      */
-    private function visualizeNode(string $name): void
+    private function visualizeNode(string $source): void
     {
-        $sourceNode = $this->getMermaidNodeOf($name);
-        foreach ($this->graph->getTransitionNamesOfNode($name) as $name) {
-            $targetNode      = $this->getMermaidNodeOf($name);
-            $this->mermaid[] = sprintf('%s-->%s', $sourceNode, $targetNode);
+        $sourceNode = $this->getMermaidNodeOf($source);
+        foreach ($this->graph->getTransitionNamesOfNode($source) as $target) {
+            $targetNode = $this->getMermaidNodeOf($target);
+            $condition = $this->graph->getTransitionCondition([$source => $target]);
+            $condition = empty($condition) ? '' : sprintf('|%s|', $condition);
+
+            $this->mermaid[] = sprintf('%s-->%s%s', $sourceNode, $condition, $targetNode);
         }
     }
 

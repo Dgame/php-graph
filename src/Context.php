@@ -12,10 +12,16 @@ use function Dgame\Ensurance\enforce;
  */
 final class Context implements ContainerInterface
 {
+    private const HISTORY = 'history';
+
     /**
      * @var array
      */
     private $context = [];
+    /**
+     * @var string
+     */
+    private $uuid;
 
     /**
      * Context constructor.
@@ -95,24 +101,26 @@ final class Context implements ContainerInterface
 
     /**
      * @param string $name
+     * @param int    $default
      *
      * @return int
      */
-    public function getAsInt(string $name): int
+    public function getAsInt(string $name, int $default = 0): int
     {
-        $value = $this->getOrDefault($name, 0);
+        $value = $this->getOrDefault($name, $default);
 
-        return filter_var($value, FILTER_VALIDATE_INT, ['options' => ['default' => 0]]);
+        return filter_var($value, FILTER_VALIDATE_INT, ['options' => ['default' => $default]]);
     }
 
     /**
      * @param string $name
+     * @param bool   $default
      *
      * @return bool
      */
-    public function getAsBool(string $name): bool
+    public function getAsBool(string $name, bool $default = false): bool
     {
-        $value = $this->getOrDefault($name, false);
+        $value = $this->getOrDefault($name, $default);
 
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
@@ -126,10 +134,65 @@ final class Context implements ContainerInterface
     }
 
     /**
+     * @param string|null $key
+     */
+    public function clear(string $key = null): void
+    {
+        if ($key === null) {
+            $this->context = [];
+        } elseif ($this->has($key)) {
+            unset($this->context[$key]);
+        }
+    }
+
+    /**
+     * @return string
+     */
+    public function getUuid(): string
+    {
+        return $this->uuid;
+    }
+
+    /**
+     * @param string $uuid
+     */
+    public function setUuid(string $uuid)
+    {
+        $this->uuid = $uuid;
+    }
+
+    /**
+     * @param string $name
+     * @param bool   $result
+     */
+    public function setHistory(string $name, bool $result): void
+    {
+        $this->context[self::HISTORY][$name] = $result;
+    }
+
+    /**
      *
      */
-    public function clear(): void
+    public function clearHistory(): void
     {
-        $this->context = [];
+        $this->clear(self::HISTORY);
+    }
+
+    /**
+     * @return array
+     */
+    public function getHistory(): array
+    {
+        return $this->getOrDefault(self::HISTORY, []);
+    }
+
+    /**
+     * @param string $key
+     *
+     * @return bool
+     */
+    public function getFromHistory(string $key): bool
+    {
+        return $this->getHistory()[$key] ?? false;
     }
 }

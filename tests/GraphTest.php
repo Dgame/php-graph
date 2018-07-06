@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 final class GraphTest extends TestCase
 {
     /**
-     *
+     * @throws \Exception
      */
     public function testTraverse()
     {
@@ -114,6 +114,9 @@ final class GraphTest extends TestCase
         $this->assertEmpty($graph->getTargets('C'));
     }
 
+    /**
+     * @throws \Exception
+     */
     public function testTransitions()
     {
         function println(...$what)
@@ -210,7 +213,7 @@ final class GraphTest extends TestCase
                                    'J'     => 'K'
                                ]);
         ob_start();
-        $graph->launch('A');
+        $context = $graph->launch('A');
         $content = ob_get_clean();
         $lines   = explode(PHP_EOL, $content);
 
@@ -232,6 +235,26 @@ final class GraphTest extends TestCase
                 'Request absenden'
             ],
             array_filter($lines)
+        );
+
+        $this->assertEquals(
+            [
+                'A'   => 1,
+                'B'   => 1,
+                'C'   => 1,
+                'D_1' => 1,
+                'D_2' => 1,
+                'F_1' => 1,
+                'F_2' => 1,
+                'F_3' => 1,
+                'G_1' => 1,
+                'G_2' => 1,
+                'G_3' => 1,
+                'I'   => 1,
+                'J'   => 1,
+                'K'   => 1
+            ],
+            $context->getHistory()
         );
     }
 }
