@@ -15,12 +15,12 @@ final class DelegateSequenceTest extends TestCase
     public function testTraverse()
     {
         $sequence = new DelegateSequence();
-        $sequence->willExecute(function () {
+        $sequence->willExecute('A', function () {
             print $this->getName() . PHP_EOL;
-        }, 'A');
-        $sequence->willExecute(function () {
+        });
+        $sequence->willExecute('D', function () {
             print $this->getName() . PHP_EOL;
-        }, 'D');
+        });
         $sequence->willExecuteAfter('A', function () {
             print $this->getName() . PHP_EOL;
         }, 'B');
@@ -35,20 +35,49 @@ final class DelegateSequenceTest extends TestCase
         $this->assertEquals(['A', 'B', 'C', 'D'], explode(PHP_EOL, trim($content)));
     }
 
+    public function testPush()
+    {
+        $sequence = new DelegateSequence();
+        $sequence->push('A', function () {
+            print $this->getName() . PHP_EOL;
+        });
+        $sequence->push('B', function () {
+            print $this->getName() . PHP_EOL;
+        });
+        $sequence->push('C', function () {
+            print $this->getName() . PHP_EOL;
+        });
+        $sequence->push('D', function () {
+            print $this->getName() . PHP_EOL;
+        });
+
+        ob_start();
+        $sequence->execute();
+        $content = ob_get_clean();
+
+        $this->assertEquals(['D', 'C', 'B', 'A'], explode(PHP_EOL, trim($content)));
+
+        ob_start();
+        $sequence->startWith('B');
+        $content = ob_get_clean();
+
+        $this->assertEquals(['B', 'A'], explode(PHP_EOL, trim($content)));
+    }
+
     public function testWhile()
     {
         $sequence = new DelegateSequence();
-        $sequence->willExecute(function (Context $context) {
+        $sequence->willExecute('X', function (Context $context) {
             $i = $context->getOrSet('i', 0);
             print $i;
             $context->set('i', $i + 1);
-        }, 'X')->while(function (Context $context): bool {
+        })->while(function (Context $context): bool {
             return $context->getAsInt('i') < 10;
         });
 
         $context = new Context();
         ob_start();
-        $sequence->executeWith($context);
+        $sequence->execute($context);
         $content = ob_get_clean();
 
         $this->assertEquals('0123456789', $content);
@@ -57,11 +86,11 @@ final class DelegateSequenceTest extends TestCase
     public function testUntil()
     {
         $sequence = new DelegateSequence();
-        $sequence->willExecute(function (Context $context) {
+        $sequence->willExecute('Y', function (Context $context) {
             $i = $context->getOrSet('i', 0);
             print $i;
             $context->set('i', $i + 1);
-        }, 'Y')->until(function (Context $context): bool {
+        })->until(function (Context $context): bool {
             return $context->getAsInt('i') >= 20;
         });
 
@@ -69,7 +98,7 @@ final class DelegateSequenceTest extends TestCase
         $context->set('i', 10);
 
         ob_start();
-        $sequence->executeWith($context);
+        $sequence->execute($context);
         $content = ob_get_clean();
 
         $this->assertEquals('10111213141516171819', $content);

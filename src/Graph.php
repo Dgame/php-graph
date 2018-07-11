@@ -154,7 +154,7 @@ final class Graph
         $context->clearHistory();
         $context->setUuid($uuid);
 
-        $this->run($key, $context);
+        $this->trigger($key, $context);
 
         return $context;
     }
@@ -165,18 +165,29 @@ final class Graph
      *
      * @throws Exception
      */
-    private function run(string $key, Context $context): void
+    private function trigger(string $key, Context $context): void
     {
-        $closure = $this->nodes[$key];
-        $result  = $closure($context);
-
-        $context->setHistory($key, $result === null ? true : (bool) $result);
+        $result = $this->execute($key, $context);
+        $context->setHistory($key, $result);
 
         foreach ($this->getTransitionsOfNode($key) as $key => $condition) {
             if ($condition($context)) {
-                $this->run($key, $context);
+                $this->trigger($key, $context);
             }
         }
+    }
+
+    /**
+     * @param string  $key
+     * @param Context $context
+     *
+     * @return bool
+     */
+    public function execute(string $key, Context $context): bool
+    {
+        $closure = $this->nodes[$key];
+
+        return $closure($context) !== false;
     }
 
     /**
