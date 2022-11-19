@@ -2,9 +2,9 @@
 
 namespace Dgame\Graph;
 
+use function Dgame\Ensurance\enforce;
 use Dgame\Graph\Exception\ItemNotFoundException;
 use Psr\Container\ContainerInterface;
-use function Dgame\Ensurance\enforce;
 
 /**
  * Class Context
