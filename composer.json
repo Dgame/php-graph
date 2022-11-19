@@ -11,13 +11,13 @@
         }
     ],
     "require": {
-        "php": "^7.1",
-        "dgame/php-ensurance": "^2.0",
-        "monolog/monolog": "^1.22",
+        "php": ">=7.4",
+        "dgame/php-ensurance": "^2.3",
+        "monolog/monolog": "^1.27",
         "psr/container": "^1.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^6.4"
+        "phpunit/phpunit": "^9.5"
     },
     "autoload": {
         "classmap": [
