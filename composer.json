@@ -13,7 +13,7 @@
     "require": {
         "php": ">=7.4",
         "dgame/php-ensurance": "^2.3",
-        "monolog/monolog": "^1.27",
+        "monolog/monolog": "^1.27 || ^2.5",
         "psr/container": "^1.0"
     },
     "require-dev": {
@@ -30,7 +30,7 @@
     },
     "scripts": {
         "test": [
-            "phpunit"
+            "phpunit --do-not-cache-result"
         ],
         "coverage": [
             "phpunit --coverage-clover=coverage"
